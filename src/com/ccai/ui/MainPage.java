@@ -18,8 +18,8 @@ import com.wxyztech.chessInfoListener.ChessInfoListener;
 import com.wxyztech.chessInfoListener.chessInfoModel;
 import com.ccai.control.UIGlobalVar;
 import com.wxyztech.dllInterfaceInfo.ChessMovesInterface;
-import com.ccai.student.Demo;
 import com.ccai.student.StudentCode;
+// import com.ccai.student.Demo;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -86,7 +86,6 @@ public class MainPage extends Application {
 
 	private int count10Second;//坐标超限倒计时的计数
 
-	// Demo demo;
     StudentCode demo;
 
 	@Override
@@ -94,6 +93,7 @@ public class MainPage extends Application {
 		initValue(); // 初始化变量
 		initPane(primaryStage); // 初始化布局
 	}
+
 
 	public static void main(String[] args) {
 		launch(args);
@@ -135,7 +135,6 @@ public class MainPage extends Application {
 			primaryStage.show();
 			allClick();
 			getCOMS();// 获取串口
-			// demo = new Demo();
 			demo = new StudentCode();
 			// 关闭窗体的事件
 			primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -1250,8 +1249,8 @@ public class MainPage extends Application {
 		public void onDataChessInfo(chessInfoModel frame) {
 			values = frame.getParam(); // 获取的byte数组
 			System.out.println("接收到了从裁判端的数据                 " + frame.getParam().length);
-
-            // 调用策略
+ 
+			// 得到策略object
 			Object object = demo.strategy(values,(byte) 0x01);
 
 			if (object instanceof Integer) { // 识别失败

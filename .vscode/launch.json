@@ -3,6 +3,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "CodeLens (Launch) - Test",
+            "request": "launch",
+            "mainClass": "com.ccai.demo.Test",
+            "projectName": "cchess-brobot"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Main",
+            "request": "launch",
+            "mainClass": "com.ccai.demo.Main",
+            "projectName": "cchess-brobot"
+        },
+        {
+            "type": "java",
             "name": "CodeLens (Launch) - MainPage",
             "request": "launch",
             "mainClass": "com.ccai.ui.MainPage",

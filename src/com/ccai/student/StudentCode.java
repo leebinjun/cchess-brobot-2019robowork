@@ -1,22 +1,145 @@
 package com.ccai.student;
 
-import sun.applet.Main;
-import com.ccai.dllInterfaceInfo.ChessStrategyInterface;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
+
+import java.lang.*;
+import java.io.*;
+
 import com.ccai.control.UIGlobalVar;
-import com.wxyztech.dllInterfaceInfo.*;
 import com.ccai.dllInterfaceInfo.ChessStrategyInterface;
+import com.wxyztech.dllInterfaceInfo.*;
 import com.ccai.ui.AlertCorrectOrErrorALertBox;
 import com.ccai.ui.MainPage;
 
+import javafx.application.Platform;
+
+import java.util.HashMap;
 /**
  * 学生自己操作的类
  * @author yuancheng
  *
  */
-public class StudentCode extends Main{
+public class StudentCode extends MainPage{
+	
+	/**
+	 * 将棋盘的数组信息转化为UCCI使用的局面描述字符串
+	 * @param values  棋盘的数组信息
+	 * @return infoString 局面描述字符串
+	 */
+	private String chessBoardtoString(byte[] values)
+	{
+		// byte[] values = new byte[]{1, 2, 4, 5, 6, 5, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7,
+        //     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 17, 0, 17, 0, 17, 0, 17, 0, 13, 0, 0, 0, 0, 0, 13, 0,
+        //     0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 12, 14, 15, 16, 15, 14, 12, 11 };
 
+        HashMap<Integer, Character> map = new HashMap<Integer, Character>(){
+            {
+                put(11, 'r');    put(1, 'R');
+                put(12, 'n');    put(2, 'N');
+                put(14, 'b');    put(4, 'B');
+                put(15, 'a');    put(5, 'A');
+                put(16, 'k');    put(6, 'K');
+                put(13, 'c');    put(3, 'C');
+                put(17, 'p');    put(7, 'P');
+                put(0, '0');
+            }    
+        }; 
+  
+		String res = new String();
+		
+		// 红黑沿楚河汉界线对调一下
+	    // 水平反转
+        for (int i = 0; i < 10; i++)
+        {
+            int count = 0;
+            for (int j = 8; j >= 0; j--)
+            {
+                if (values[i*9+j] != 0)
+                {
+                    if(count != 0)
+                    {
+                        res += String.valueOf(count);
+                        count = 0;
+                    }
+                    res += map.get(0xFF & values[i*9+j]);
+                }
+                else
+                {
+                    count++;
+                }
+            }
+            if(count != 0)
+            {
+                res += String.valueOf(count);
+            }
+            res += '/';
+        }
+        // 去掉最后一个字符'/'
+		res = res.substring(0,res.length()-1);
+		res = new StringBuffer(res).reverse().toString();
+        // System.out.print("res: ");
+        // System.out.println(res);
+		return res;
+	}
+	
+	/**
+	 * 调用引擎得到策略字符串
+	 * @param chessBoardInfoString 局面描述字符串
+	 * @return 引擎计算结果
+	 */
 
+	private String getMoveString(String chessBoardInfoString ) //throws InterruptedException
+	{
+		String filePath = ".\\dll\\cyclone.exe";
+		StringBuilder sb = new StringBuilder();
+		String res = ""; 
+		try
+		{
+			System.out.print("hello!\n");
+			// String cm2 = "position fen rCbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/7C1/9/RNBAKABNR b - - 0 1";
+			String cm2 = chessBoardInfoString;
+			String cm1 = "go time 500 depth 5";
+			
+			// String cmd = filePath + " && " + cm2 + " && " + cm1;
+			String cmd = filePath ;//+ " ucci";
+			
+			Process p = Runtime.getRuntime().exec(cmd);
+			
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
+			bw.write(cm2);
+			bw.newLine();
+			bw.flush();
+			bw.write(cm1);
+			bw.newLine();
+			bw.flush();
+			bw.close();
+			
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line = "";
+			String ress = "";
+			while ((line=bufferedReader.readLine()) != null) 
+			{
+				if(line.length() > 12)
+					ress = line.substring(9, 13);
+				System.out.println(line);
+				System.out.print("res: ");
+				System.out.println(ress);
+			}
+			System.out.print("byebye!\n");
+			
+			System.out.print("final res: ");
+			System.out.println(ress);
 
+			res = ress;
+			return res;
+		}catch (IOException ex) {
+			return res;
+				// ex.printStackTrace();
+		}
+	}
+	
+	
+	
 	/**
 	 * 策略计算
 	 * @param values  棋盘的数组信息
@@ -25,30 +148,53 @@ public class StudentCode extends Main{
 	 */
 	public  Object strategy(byte[] values ,byte redOrBlack){
 
-		ChessStrategyInterface chessStrategyInterface = new ChessStrategyInterface();
-		Object object = null;
-		
-		object = chessStrategyInterface.strategy(values, redOrBlack);// 黑色策略
-
-
-		if (object instanceof Integer) {  //策略计算失败
-
-			return 0;
-		} else { //策略计算成功
-			int[] strategy = new int[4];//创建一个长度为4 的数组
-
-			Result[] results = (Result[]) object;
-			strategy[0] = results[0].x1;
-			strategy[1] = results[0].y1;
-			strategy[2] = results[0].x2;
-			strategy[3] = results[0].y2;
-
-			return strategy;
+		// 打印当前棋盘
+		System.out.print("board:");
+		System.out.println(values);
+		for (int i = 0; i<90; i++)
+		{
+			System.out.print(values[i]);
+			if ((i+1)%9 == 0)
+			System.out.println();
 		}
 
+		//得到局面描述字符串
+        String positionIfo =  chessBoardtoString( values);
+		System.out.print("posIfo: ");
+		System.out.println(positionIfo);
+		
+		//得到完整字符串
+		String chessBoardInfoString = "position fen " + positionIfo + " b - - 0 1";
 
-		return object;
+		//调用引擎得到策略字符串
+        String sMove =  getMoveString( chessBoardInfoString);
+		
+		//打印策略
+		System.out.print("sMove: ");
+		System.out.println(sMove);
+		//将策略转化为移动坐标
+		// String sMove = "b7b5";
+		
+		// 0                       1
+		// 1      red              2     red
+		// 2                       3
+		// .     strategy          .    board
+		// .                       .
+		// .      black            .    black
+		// 9                       10
+		//   a b c ... g h i         1 2 3 ... 8 9
+
+		int[] strategy = new int[4];//创建一个长度为4 的数组
+        strategy[0] = sMove.charAt(1)-'0'+1;
+        strategy[1] = sMove.charAt(0)-'a'+1;
+        strategy[2] = sMove.charAt(3)-'0'+1;
+		strategy[3] = sMove.charAt(2)-'a'+1;
+		
+		return strategy;
+
 	}
+
+
 
 
 	/**
