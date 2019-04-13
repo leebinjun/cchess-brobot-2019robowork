@@ -1,0 +1,68 @@
+/* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+#backgroundColor{
+	-fx-background-color: #3d3d3d;
+}
+
+/**
+ * 连接
+ * button按钮的样式
+ */
+#button{
+    -fx-background-insets: 0;
+    -fx-pref-width: 100px;
+    -fx-pref-height: 25px;
+    -fx-background-radius: 10
+}
+#button:hover{
+    -fx-background-insets: 0;
+    -fx-background-radius: 10
+}
+#button:pressed{
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+    -fx-background-color: #cccccc;
+    -fx-text-fill: #888888
+
+}
+
+/**
+ * 下拉选择框的样式
+ */
+#comboBox{
+	 -fx-background-insets: 0;
+	  -fx-background-radius: 10;
+	  -fx-pref-height: 25px;
+	  -fx-pref-width: 125px;
+}
+#labelTime{
+	-fx-background-color:white;
+	 -fx-pref-height: 25px;
+	 -fx-pref-width: 100px;
+	 -fx-text-fill: red
+}
+
+#labelPic{
+	-fx-background-color:white;
+	 -fx-pref-height: 300px;
+	 -fx-pref-width: 400px;
+}
+#sep .line{
+    -fx-border-color: white;
+    -fx-border-width: 2.0;
+}
+
+#sepChess .line{
+    -fx-border-color: black;
+    -fx-border-width: 1.0;
+}
+
+#alertText {
+    -fx-text-fill:white;
+    -fx-font-size:18;
+}
+
+#alertGreyBackground{
+	-fx-background-color: #7d7d7d;
+    -fx-background-radius: 15.0;
+}
+

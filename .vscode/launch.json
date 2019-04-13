@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - MainPage",
+            "request": "launch",
+            "mainClass": "com.ccai.ui.MainPage",
+            "projectName": "cchess-brobot"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - ChessStrategy",
+            "request": "launch",
+            "mainClass": "com.ccai.dllInterfaceInfo.ChessStrategy",
+            "projectName": "cchess-brobot"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - ChessStrategyInterface",
+            "request": "launch",
+            "mainClass": "com.ccai.dllInterfaceInfo.ChessStrategyInterface",
+            "projectName": "cchess-brobot"
+        }
+    ]
+}
