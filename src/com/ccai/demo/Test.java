@@ -7,8 +7,6 @@ import java.util.HashMap;
 class Main
 {
 
-  
-        
     public static void main(String args[]) throws InterruptedException 
     {
         byte[] values = new byte[]{1, 2, 4, 5, 6, 5, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 7, 0, 7, 0, 7, 0, 7, 0, 7,

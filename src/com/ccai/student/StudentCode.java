@@ -23,8 +23,9 @@ public class StudentCode extends MainPage{
 	
 	/**
 	 * 将棋盘的数组信息转化为UCCI使用的局面描述字符串
+	 * ucci FEN格式串  http://www.xqbase.com/protocol/cchess_fen.htm
 	 * @param values  棋盘的数组信息
-	 * @return infoString 局面描述字符串
+	 * @return infoString 局面描述FEN格式串
 	 */
 	private String chessBoardtoString(byte[] values)
 	{
@@ -87,7 +88,6 @@ public class StudentCode extends MainPage{
 	 * @param chessBoardInfoString 局面描述字符串
 	 * @return 引擎计算结果
 	 */
-
 	private String getMoveString(String chessBoardInfoString ) //throws InterruptedException
 	{
 		String filePath = ".\\dll\\cyclone.exe";
@@ -121,14 +121,14 @@ public class StudentCode extends MainPage{
 			{
 				if(line.length() > 12)
 					ress = line.substring(9, 13);
-				System.out.println(line);
-				System.out.print("res: ");
-				System.out.println(ress);
+				// System.out.println(line);
+				// System.out.print("res: ");
+				// System.out.println(ress);
 			}
-			System.out.print("byebye!\n");
+			// System.out.print("byebye!\n");
 			
-			System.out.print("final res: ");
-			System.out.println(ress);
+			// System.out.print("final res: ");
+			// System.out.println(ress);
 
 			res = ress;
 			return res;
@@ -158,6 +158,16 @@ public class StudentCode extends MainPage{
 			System.out.println();
 		}
 
+        //     values[90]                           positionIfo   
+		// 1 2 4 5 6 5 4 2 1                       
+		// 0 0 0  red                       RED   - RNBAKCP
+		// 0 3 ...                          black - rnbakcp     
+		// .                                rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/7C1/9/RNBAKABNR
+		// .                      
+		// .      black           
+		// 0                      
+		// 11 12 ...      11   
+
 		//得到局面描述字符串
         String positionIfo =  chessBoardtoString( values);
 		System.out.print("posIfo: ");
@@ -175,14 +185,15 @@ public class StudentCode extends MainPage{
 		//将策略转化为移动坐标
 		// String sMove = "b7b5";
 		
-		// 0                       1
-		// 1      red              2     red
-		// 2                       3
-		// .     strategy          .    board
-		// .                       .
-		// .      black            .    black
-		// 9                       10
-		//   a b c ... g h i         1 2 3 ... 8 9
+		//     sMove("b7b5")               real board for arm
+		// 0                       		1
+		// 1      red              		2        red
+		// 2                     		3
+		// .                     		.   
+		// .                      		.
+		// .      black            		.       black
+		// 9                       	   10
+		//   a b c ... g h i         		1 2 3 ... 8 9
 
 		int[] strategy = new int[4];//创建一个长度为4 的数组
         strategy[0] = sMove.charAt(1)-'0'+1;
