@@ -83,7 +83,7 @@ public class AlertLayoutXYZ {
 		window.initModality(Modality.APPLICATION_MODAL);
 		window.initStyle(StageStyle.TRANSPARENT);
 
-		close = new Label("", new ImageView("/com/wxyztech/pic/btn_close_pop_up.png"));
+		close = new Label("", new ImageView("/com/ccai/pic/btn_close_pop_up.png"));
 		close.setPrefSize(30, 30);
 		close.setLayoutX(420);
 

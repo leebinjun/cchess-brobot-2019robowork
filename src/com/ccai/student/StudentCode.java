@@ -200,7 +200,21 @@ public class StudentCode extends MainPage{
         strategy[1] = sMove.charAt(0)-'a'+1;
         strategy[2] = sMove.charAt(3)-'0'+1;
 		strategy[3] = sMove.charAt(2)-'a'+1;
-		
+
+		/**
+		 * 死棋时不吃帅的情况：
+		 * 暂停，恢复局面
+		 * 按照real board计算始末位置，添加后取消注释
+		 */
+        // int idx_start = 2; // b
+        // int idy_strat = 8; // 7
+        // int idx_end   = 2; // b
+        // int idy_end   = 6; // 5
+        // strategy[0] = idy_start;
+        // strategy[1] = idx_start;
+        // strategy[2] = idx_end;
+		// strategy[3] = idy_end;
+
 		return strategy;
 
 	}
