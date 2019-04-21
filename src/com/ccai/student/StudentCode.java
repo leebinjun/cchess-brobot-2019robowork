@@ -158,15 +158,15 @@ public class StudentCode extends MainPage{
 			System.out.println();
 		}
 
-        //     values[90]                           positionIfo   
-		// 1 2 4 5 6 5 4 2 1                       
-		// 0 0 0  red                       RED   - RNBAKCP
-		// 0 3 ...                          black - rnbakcp     
-		// .                                rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/7C1/9/RNBAKABNR
-		// .                      
-		// .      black           
-		// 0                      
-		// 11 12 ...      11   
+        //     values[90]           |                positionIfo   
+		// 1 2 4 5 6 5 4 2 1        |               
+		// 0 0 0  red               |        RED   - RNBAKCP
+		// 0 3 ...                  |        black - rnbakcp     
+		// .                        |        rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/7C1/9/RNBAKABNR
+		// .                        | 
+		// .      black             |
+		// 0                        |
+		// 11 12 ...      11        |
 
 		//得到局面描述字符串
         String positionIfo =  chessBoardtoString( values);
@@ -174,7 +174,11 @@ public class StudentCode extends MainPage{
 		System.out.println(positionIfo);
 		
 		//得到完整字符串
-		String chessBoardInfoString = "position fen " + positionIfo + " b - - 0 1";
+		String chessBoardInfoString = "";
+		if (redOrBlack == 1)
+			chessBoardInfoString = "position fen " + positionIfo + " b - - 0 1";
+		if (redOrBlack == 0)
+			chessBoardInfoString = "position fen " + positionIfo + " w - - 0 1";
 
 		//调用引擎得到策略字符串
         String sMove =  getMoveString( chessBoardInfoString);
@@ -185,22 +189,30 @@ public class StudentCode extends MainPage{
 		//将策略转化为移动坐标
 		// String sMove = "b7b5";
 		
-		//     sMove("b7b5")               real board for arm
-		// 0                       		1
-		// 1      red              		2        red
-		// 2                     		3
-		// .                     		.   
-		// .                      		.
-		// .      black            		.       black
-		// 9                       	   10
-		//   a b c ... g h i         		1 2 3 ... 8 9
+		//     sMove("b7b5")        |        real board for arm
+		// 0                        |	 1
+		// 1      red              	|	 2        red
+		// 2                     	|	 3
+		// .                     	|	 .   
+		// .                      	|	 .
+		// .      black            	|	 .       black
+		// 9                       	|    10
+		//   a b c ... g h i        | 	     1 2 3 ... 8 9
 
 		int[] strategy = new int[4];//创建一个长度为4 的数组
         strategy[0] = sMove.charAt(1)-'0'+1;
         strategy[1] = sMove.charAt(0)-'a'+1;
         strategy[2] = sMove.charAt(3)-'0'+1;
 		strategy[3] = sMove.charAt(2)-'a'+1;
-
+		
+		if (redOrBlack == 0) // 红棋的情况
+		{
+			strategy[0] = 10 - sMove.charAt(1) + '0';
+			strategy[1] = 9 - sMove.charAt(0) + 'a';
+			strategy[2] = 10 - sMove.charAt(3) + '0';
+			strategy[3] = 9 - sMove.charAt(2) + 'a';
+		}
+		
 		/**
 		 * 死棋时不吃帅的情况：
 		 * 暂停，恢复局面

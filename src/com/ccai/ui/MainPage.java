@@ -1250,8 +1250,18 @@ public class MainPage extends Application {
 			values = frame.getParam(); // 获取的byte数组
 			System.out.println("接收到了从裁判端的数据                 " + frame.getParam().length);
  
+            /**
+			 * 默认为黑棋
+			 * 有两处需要设置
+			 * line1261 Object object = demo.strategy(values,(byte) 0x01);
+			 * line1286 int endIndex = (strategy[2] - 1) * 9 + (strategy[3] - 1);
+			 */
+
 			// 得到策略object
+			// 黑棋
 			Object object = demo.strategy(values,(byte) 0x01);
+			// 红棋
+			// Object object = demo.strategy(values,(byte) 0x00);
 
 			if (object instanceof Integer) { // 识别失败
 				Platform.runLater(new Runnable() {
@@ -1272,7 +1282,10 @@ public class MainPage extends Application {
 
 				int[] strategy = (int[]) object;
 
+				// 黑棋的情况
 				int endIndex = (strategy[2] - 1) * 9 + (strategy[3] - 1); // 棋子移动终点的索引,用来判断终点没有没有棋子被吃
+				// 红棋的情况
+				// int endIndex = 89 - (strategy[2] - 1) * 9 - (strategy[3] - 1); // 棋子移动终点的索引,用来判断终点没有没有棋子被吃
 
 				float[][] layoutStartAndEnd = conversion(strategy); // 将获得的策略信息转化为机械臂坐标的二维数组
 
