@@ -3,6 +3,7 @@ package com.ccai.ui;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.io.IOException;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -32,6 +33,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -44,6 +46,8 @@ public class MainPage extends Application {
 
 	private Button photoButtonToMain; // 发送给裁判端
 
+	private Button photoButtonStargy;// 执行策略
+
 	private Button buttonConnMain; // 连接裁判端电脑
 
 	private Button buttonConnArm; // 连接机械臂
@@ -54,23 +58,19 @@ public class MainPage extends Application {
 
 	private AlertCorrectOrErrorALertBox alertConncet;// 正在连接的弹窗
 
-
 	// 棋盘90个位置的坐标
 	private float[][] layout90 = new float[90][2];
 
 	// 棋盒16个位置的坐标
 	private float[][] layout16 = new float[16][2];
 
-	public  float[] layoutZ = new float[2]; // 两个Z轴的坐标
+	public float[] layoutZ = new float[2]; // 两个Z轴的坐标
 
 	// 实例化和PC的回调
 	MyListenerPC listenerPC = new MyListenerPC();
 
-
-
 	// 实例化和ARM端的回调
 	MyListenerArm listenerArm = new MyListenerArm();
-
 
 	private ComboBox<String> comboBoxMain; // 连接的串口显示
 
@@ -78,22 +78,21 @@ public class MainPage extends Application {
 
 	private Label labelLayout;
 
-	protected boolean tenMinutesFlag;//10秒倒计时的标志位
+	protected boolean tenMinutesFlag;// 10秒倒计时的标志位
 
-	protected boolean startMove = true;//开始为true,果走的终点有棋子,则先置为false,待走完后再置为true
+	protected boolean startMove = true;// 开始为true,果走的终点有棋子,则先置为false,待走完后再置为true
 
-	protected boolean moveFlag ;//循环检测机械臂坐标的标志位
+	protected boolean moveFlag;// 循环检测机械臂坐标的标志位
 
-	private int count10Second;//坐标超限倒计时的计数
+	private int count10Second;// 坐标超限倒计时的计数
 
-    StudentCode demo;
+	StudentCode demo;
 
 	@Override
 	public void start(Stage primaryStage) {
 		initValue(); // 初始化变量
 		initPane(primaryStage); // 初始化布局
 	}
-
 
 	public static void main(String[] args) {
 		launch(args);
@@ -230,7 +229,7 @@ public class MainPage extends Application {
 		UIGlobalVar.textValue.setAlignment(Pos.CENTER);
 
 		// 初始化
-		resetButton = new Button("初始化");
+		resetButton = new Button("手动发点");
 		resetButton.setLayoutX(200);
 		resetButton.setLayoutY(200);
 		resetButton.setId("button");
@@ -238,16 +237,76 @@ public class MainPage extends Application {
 
 		mainPane.getChildren().addAll(setting, resetButton, UIGlobalVar.textValue, labelLayout);
 
-		/********************************** 图片拍照 ****************************************/
+		/**********************************
+		 * 图片拍照
+		 ****************************************/
+
+		photoButtonStargy = new Button("执行策略");
+		photoButtonStargy.setLayoutX(200);
+		photoButtonStargy.setLayoutY(300);
+		photoButtonStargy.setId("button");
+		photoButtonStargy.setAlignment(Pos.CENTER);
 
 		// 发送给裁判端
-		photoButtonToMain = new Button("发送");
+		photoButtonToMain = new Button("发送信号");
 		photoButtonToMain.setLayoutX(200);
 		photoButtonToMain.setLayoutY(340);
 		photoButtonToMain.setId("button");
 		photoButtonToMain.setAlignment(Pos.CENTER);
 
-		mainPane.getChildren().addAll(photoButtonToMain);
+		TextField textStartX = new TextField();
+		textStartX.setPrefWidth(50);
+		textStartX.setLayoutX(0);
+		textStartX.setLayoutY(260);
+
+		TextField textStartY = new TextField();
+		textStartY.setPrefWidth(50);
+		textStartY.setLayoutX(60);
+		textStartY.setLayoutY(260);
+
+		TextField textStartZ = new TextField();
+		textStartZ.setPrefWidth(50);
+		textStartZ.setLayoutX(120);
+		textStartZ.setLayoutY(260);
+
+		TextField textEndX = new TextField();
+		textEndX.setPrefWidth(50);
+		textEndX.setLayoutX(180);
+		textEndX.setLayoutY(260);
+
+		TextField textEndY = new TextField();
+		textEndY.setPrefWidth(50);
+		textEndY.setLayoutX(240);
+		textEndY.setLayoutY(260);
+
+		TextField textEndZ = new TextField();
+		textEndZ.setPrefWidth(50);
+		textEndZ.setLayoutX(300);
+		textEndZ.setLayoutY(260);
+
+		TextField textIndex = new TextField();
+		textIndex.setPrefWidth(50);
+		textIndex.setLayoutX(0);
+		textIndex.setLayoutY(330);
+		mainPane.getChildren().addAll(textStartX, textStartY, textStartZ, textEndX, textEndY, textEndZ, textIndex);
+
+		mainPane.getChildren().addAll(photoButtonToMain, photoButtonStargy);
+
+		// 手动发点
+		resetButton.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+
+				float[] start = new float[] { Float.parseFloat(textStartX.getText()),
+						Float.parseFloat(textStartY.getText()), Float.parseFloat(textStartZ.getText()) };
+				float[] end = new float[] { Float.parseFloat(textEndX.getText()), Float.parseFloat(textEndY.getText()),
+						Float.parseFloat(textEndZ.getText()) };
+
+				controlArmToMoveCopy(Integer.parseInt(textIndex.getText()), start, end, layout16);
+			}
+		});
+
 	}
 
 	/**
@@ -316,6 +375,61 @@ public class MainPage extends Application {
 	}
 
 	/**
+	 * 执行策略
+	 */
+	public void stargyMethod() {
+		// 得到策略object
+		// (byte)0x00 红色策略, (byte)0x01 黑色策略
+		Object object = demo.strategy(values, (byte) 0x00);
+
+		if (object instanceof Integer) { // 识别失败
+			Platform.runLater(new Runnable() {
+
+				@Override
+				public void run() {
+					new AlertCorrectOrErrorALertBox().display(object, "策略计算失败", null);
+
+				}
+			});
+		} else {
+
+			// 初始化一系列坐标
+			// 读取xml中的值
+			ArrayList<ArrayList<Float>> valuesXY = WriteValueToXml.readFromXML();
+			// 初始化棋盘在机械臂中的坐标
+			resetLayout(valuesXY);
+
+			int[] strategy = (int[]) object;
+
+			int endIndex = 89 - (strategy[2] - 1) * 9 - (strategy[3] - 1); // 棋子移动终点的索引,用来判断终点没有没有棋子被吃
+			System.out.print("##################" + endIndex + "##########" + values[endIndex]);
+			// char val = (char) System.in.read();
+
+			float[][] layoutStartAndEnd = conversion(strategy); // 将获得的策略信息转化为机械臂坐标的二维数组
+
+			System.err.println("起点坐标    :    (" + layoutStartAndEnd[0][0] + ", " + layoutStartAndEnd[0][1] + ", "
+					+ layoutStartAndEnd[0][2] + ")");
+			System.err.println("终点坐标    :    (" + layoutStartAndEnd[1][0] + ", " + layoutStartAndEnd[1][1] + ", "
+					+ layoutStartAndEnd[1][2] + ")");
+
+			float[] start = layoutStartAndEnd[0];
+			float[] end = layoutStartAndEnd[1];
+			/**********************************
+			 * 学生自己完成
+			 *********************************************************/
+
+			// 控制运动函数
+
+			// controlArmToMove(endIndex, start, end, layout16);
+			demo.moveChess(endIndex, values, start, end, layout16);
+
+			/**********************************
+			 * 学生自己完成
+			 *********************************************************/
+		}
+	}
+
+	/**
 	 * 点击事件
 	 */
 	public void allClick() {
@@ -326,7 +440,8 @@ public class MainPage extends Application {
 			public void handle(ActionEvent event) {
 				if (!UIGlobalVar.connPC) {
 
-					new Thread(new ConnPCThread(UIGlobalVar.ChessPC, comboBoxMain, listenerPC, UIGlobalVar.ppPC)).start();
+					new Thread(new ConnPCThread(UIGlobalVar.ChessPC, comboBoxMain, listenerPC, UIGlobalVar.ppPC))
+							.start();
 				} else {
 					new Thread(new Runnable() {
 
@@ -362,7 +477,8 @@ public class MainPage extends Application {
 			public void handle(ActionEvent event) {
 				if (!UIGlobalVar.connArm) {
 					UIGlobalVar.textValue.setText("");
-					new Thread(new ConnARMThread(UIGlobalVar.brobotArm, comboBoxArm, listenerArm, UIGlobalVar.ppArm)).start();
+					new Thread(new ConnARMThread(UIGlobalVar.brobotArm, comboBoxArm, listenerArm, UIGlobalVar.ppArm))
+							.start();
 				} else {
 					new Thread(new Runnable() {
 
@@ -394,16 +510,18 @@ public class MainPage extends Application {
 				new AlertLayoutXYZ().display();
 			}
 		});
-		// 开始
-		resetButton.setOnAction(new EventHandler<ActionEvent>() {
+
+		// // z执行策略
+
+		photoButtonStargy.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
 			public void handle(ActionEvent event) {
 
+				stargyMethod();
+
 			}
 		});
-
-		// 拍照
 		photoButtonToMain.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -430,20 +548,18 @@ public class MainPage extends Application {
 			}
 		});
 
+		// });
+
 	}
 
 	/**
 	 *
 	 * 控制机械臂移动执行策略的方法
 	 *
-	 * @param endIndex
-	 *            终点索引 判断终点是否有棋子
-	 * @param start
-	 *            起点坐标
-	 * @param end
-	 *            终点坐标(吃棋子点坐标,高度要根据情况来定)
-	 * @param layout16
-	 *            棋盒的16个坐标的集合
+	 * @param endIndex 终点索引 判断终点是否有棋子
+	 * @param start    起点坐标
+	 * @param end      终点坐标(吃棋子点坐标,高度要根据情况来定)
+	 * @param layout16 棋盒的16个坐标的集合
 	 */
 	public void controlArmToMove(int endIndex, float[] start, float[] end, float[][] layout16) {
 		UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte) 0x01);
@@ -459,43 +575,48 @@ public class MainPage extends Application {
 		if (values[endIndex] != 0) {// 如果走的终点有棋子,则先移开棋子
 			startMove = false;
 			// 高度需要为start[2]
-			int code = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20, new float[] { end[0], end[1], start[2] });
+			int code = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
+					new float[] { end[0], end[1], start[2] });
 			if (code == 4) {
 				try {
-					 moveFlag = true;
+					moveFlag = true;
 
-					new Thread(new TenMinutesThread()).start();//开启倒计时10秒的循环
+					new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
 
 					while (moveFlag) {
 						System.out.println("aaaaaaaa");
 						if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - end[0]) <= 10)
 								&& (Math.abs(UIGlobalVar.COMM_Y_Layout1 - end[1]) <= 10)
 								&& (Math.abs(UIGlobalVar.COMM_Z_Layout1 - start[2]) <= 10)) {
-							tenMinutesFlag = false;//结束10秒的倒计时
-							moveFlag = false; //结束本次循环
+							tenMinutesFlag = false;// 结束10秒的倒计时
+							moveFlag = false; // 结束本次循环
 
 							UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x01);// 吸气泵
 
 							Thread.sleep(1000);
 
 							int code1 = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
-									new float[] { layout16[UIGlobalVar.countChessBox][0], layout16[UIGlobalVar.countChessBox][1], layoutZ[1] }); // z轴要高一点
+									new float[] { layout16[UIGlobalVar.countChessBox][0],
+											layout16[UIGlobalVar.countChessBox][1], layoutZ[1] }); // z轴要高一点
 							if (code1 == 4) {
 								moveFlag = true;
-								new Thread(new TenMinutesThread()).start();//开启倒计时10秒的循环
+								new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
 								while (moveFlag) {
 									System.out.println("bbbbbbbbbb");
-									if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - layout16[UIGlobalVar.countChessBox][0]) <= 10)
-											&& (Math.abs(UIGlobalVar.COMM_Y_Layout1 - layout16[UIGlobalVar.countChessBox][1]) <= 10)
+									if ((Math.abs(
+											UIGlobalVar.COMM_X_Layout1 - layout16[UIGlobalVar.countChessBox][0]) <= 10)
+											&& (Math.abs(UIGlobalVar.COMM_Y_Layout1
+													- layout16[UIGlobalVar.countChessBox][1]) <= 10)
 											&& (Math.abs(UIGlobalVar.COMM_Z_Layout1 - layoutZ[1]) <= 10)) {
-										tenMinutesFlag = false;//结束10秒的倒计时
+										tenMinutesFlag = false;// 结束10秒的倒计时
 										startMove = true;
 										moveFlag = false;
 										UIGlobalVar.countChessBox++;
 										if (UIGlobalVar.countChessBox == 16) {
 											UIGlobalVar.countChessBox = 0;
 										}
-										UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); // 停
+										UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(),
+												(byte) 0x00); // 停
 
 										Thread.sleep(500);
 									}
@@ -525,7 +646,7 @@ public class MainPage extends Application {
 
 					@Override
 					public void run() {
-						startMove = false;//不执行移开棋子后再走棋子的步骤
+						startMove = false;// 不执行移开棋子后再走棋子的步骤
 						new AlertCorrectOrErrorALertBox().display(code, "移动到吃棋子点错误", null);
 					}
 				});
@@ -535,32 +656,34 @@ public class MainPage extends Application {
 		}
 
 		/*************************** 移开棋子后再走棋子的步骤 ******************************/
-		if (startMove) { //如果正确执行了之前的代码
+		if (startMove) { // 如果正确执行了之前的代码
+
 			int code = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20, start);
 			if (code == 4) {
 				moveFlag = true;
-				new Thread(new TenMinutesThread()).start();//开启倒计时10秒的循环
+				new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
 				while (moveFlag) {
 					System.out.println("ccccccccccc");
 					try {
 						if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - start[0]) < 10)
 								&& Math.abs(UIGlobalVar.COMM_Y_Layout1 - start[1]) < 10
 								&& Math.abs(UIGlobalVar.COMM_Z_Layout1 - start[2]) < 10) {
-							tenMinutesFlag = false;//结束10秒倒计时
+							tenMinutesFlag = false;// 结束10秒倒计时
 							moveFlag = false;
 							UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x01);
 							Thread.sleep(1000);
 							// 运动到目标点
-							int code1 = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20, end);
+							int code1 = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
+									end);
 							if (code1 == 4) {
 								moveFlag = true;
-								new Thread(new TenMinutesThread()).start();//开启倒计时10秒的循环
+								new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
 								while (moveFlag) {
 									System.out.println("dddddddddd");
 									if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - end[0]) < 10)
 											&& Math.abs(UIGlobalVar.COMM_Y_Layout1 - end[1]) < 10
 											&& Math.abs(UIGlobalVar.COMM_Z_Layout1 - end[2]) < 10) {
-										tenMinutesFlag = false;//结束10秒倒计时
+										tenMinutesFlag = false;// 结束10秒倒计时
 										moveFlag = false;
 										startMove = true;
 										Platform.runLater(new Runnable() {
@@ -600,14 +723,229 @@ public class MainPage extends Application {
 				});
 
 			}
-			if (startMove) { //如果以上出现问题,则不执行以下代码
+			if (startMove) { // 如果以上出现问题,则不执行以下代码
 				try {
 					Thread.sleep(500);
 					UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); // 停气泵
 					Thread.sleep(100);
-					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0, new float[] { 0, -286, 150 });// 先回零
+					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0,
+							new float[] { 0, -286, 150 });// 先回零
 					Thread.sleep(1500);
-					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0, new float[] { -277, -68, 150 });// 再移开
+					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0,
+							new float[] { -277, -68, 150 });// 再移开
+					Thread.sleep(2000);
+					UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte) 0x05);
+
+					new Thread(new Runnable() {
+						public void run() {
+							int code = UIGlobalVar.ChessPC.finishChessing(UIGlobalVar.ppPC.getValue());
+							Platform.runLater(new Runnable() {
+
+								@Override
+								public void run() {
+
+									if (code == 4) {
+										new AlertCorrectOrErrorALertBox().display(code, "下棋指令发送给裁判端完毕", null);
+										UIGlobalVar.textValue.setText("");
+									} else {
+										new AlertCorrectOrErrorALertBox().display(code, "下棋指令发送给裁判端失败,请重试", null);
+									}
+
+								}
+							});
+						}
+					}).start();
+
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+		}
+
+	}
+
+	/**
+	 *
+	 * 控制机械臂移动执行策略的方法
+	 *
+	 * @param endIndex 终点索引 判断终点是否有棋子
+	 * @param start    起点坐标
+	 * @param end      终点坐标(吃棋子点坐标,高度要根据情况来定)
+	 * @param layout16 棋盒的16个坐标的集合
+	 */
+	public void controlArmToMoveCopy(int endIndex, float[] start, float[] end, float[][] layout16) {
+		UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte) 0x01);
+		UIGlobalVar.brobotArm.setMovementSpeedRate(UIGlobalVar.ppArm.getValue(), 1.0f);
+		UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0, new float[] { 0, -286, 150 });// 回零
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+
+		startMove = true;
+		if (values[endIndex] != 0) {// 如果走的终点有棋子,则先移开棋子
+			startMove = false;
+			// 高度需要为start[2]
+			int code = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
+					new float[] { end[0], end[1], start[2] });
+			if (code == 4) {
+				try {
+					moveFlag = true;
+
+					new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
+
+					while (moveFlag) {
+						System.out.println("aaaaaaaa");
+						if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - end[0]) <= 10)
+								&& (Math.abs(UIGlobalVar.COMM_Y_Layout1 - end[1]) <= 10)
+								&& (Math.abs(UIGlobalVar.COMM_Z_Layout1 - start[2]) <= 10)) {
+							tenMinutesFlag = false;// 结束10秒的倒计时
+							moveFlag = false; // 结束本次循环
+
+							UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x01);// 吸气泵
+
+							Thread.sleep(1000);
+
+							int code1 = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
+									new float[] { layout16[UIGlobalVar.countChessBox + 1][0],
+											layout16[UIGlobalVar.countChessBox + 1][1], layoutZ[1] }); // z轴要高一点
+							if (code1 == 4) {
+								moveFlag = true;
+								new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
+								while (moveFlag) {
+									System.out.println("bbbbbbbbbb");
+									if ((Math.abs(UIGlobalVar.COMM_X_Layout1
+											- layout16[UIGlobalVar.countChessBox + 1][0]) <= 10)
+											&& (Math.abs(UIGlobalVar.COMM_Y_Layout1
+													- layout16[UIGlobalVar.countChessBox + 1][1]) <= 10)
+											&& (Math.abs(UIGlobalVar.COMM_Z_Layout1 - layoutZ[1]) <= 10)) {
+										tenMinutesFlag = false;// 结束10秒的倒计时
+										startMove = true;
+										moveFlag = false;
+										UIGlobalVar.countChessBox++;
+										if (UIGlobalVar.countChessBox == 16) {
+											UIGlobalVar.countChessBox = 0;
+										}
+										UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(),
+												(byte) 0x00); // 停
+
+										Thread.sleep(500);
+									}
+									Thread.sleep(100);
+								}
+							} else {
+								Platform.runLater(new Runnable() {
+
+									@Override
+									public void run() {
+										startMove = false;
+										new AlertCorrectOrErrorALertBox().display(code1, "移动到棋盒点错误", null);
+									}
+								});
+							}
+
+							UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); //
+
+						}
+						Thread.sleep(100);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			} else {
+				Platform.runLater(new Runnable() {
+
+					@Override
+					public void run() {
+						startMove = false;// 不执行移开棋子后再走棋子的步骤
+						new AlertCorrectOrErrorALertBox().display(code, "移动到吃棋子点错误", null);
+					}
+				});
+
+			}
+
+		}
+
+		/*************************** 移开棋子后再走棋子的步骤 ******************************/
+		if (startMove) { // 如果正确执行了之前的代码
+
+			int code = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20, start);
+			if (code == 4) {
+				moveFlag = true;
+				new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
+				while (moveFlag) {
+					System.out.println("ccccccccccc");
+					try {
+						if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - start[0]) < 10)
+								&& Math.abs(UIGlobalVar.COMM_Y_Layout1 - start[1]) < 10
+								&& Math.abs(UIGlobalVar.COMM_Z_Layout1 - start[2]) < 10) {
+							tenMinutesFlag = false;// 结束10秒倒计时
+							moveFlag = false;
+							UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x01);
+							Thread.sleep(1000);
+							// 运动到目标点
+							int code1 = UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 20,
+									end);
+							if (code1 == 4) {
+								moveFlag = true;
+								new Thread(new TenMinutesThread()).start();// 开启倒计时10秒的循环
+								while (moveFlag) {
+									System.out.println("dddddddddd");
+									if ((Math.abs(UIGlobalVar.COMM_X_Layout1 - end[0]) < 10)
+											&& Math.abs(UIGlobalVar.COMM_Y_Layout1 - end[1]) < 10
+											&& Math.abs(UIGlobalVar.COMM_Z_Layout1 - end[2]) < 10) {
+										tenMinutesFlag = false;// 结束10秒倒计时
+										moveFlag = false;
+										startMove = true;
+										Platform.runLater(new Runnable() {
+											public void run() {
+												UIGlobalVar.textValue.setText("处理成功");
+												// new
+												// AlertCorrectOrErrorALertBox().display(101,
+												// "运动完毕,请点击\"发送\"按钮继续",
+												// null);
+
+											}
+										});
+									}
+									Thread.sleep(100);
+								}
+							} else {
+								Platform.runLater(new Runnable() {
+									public void run() {
+										startMove = false;
+										new AlertCorrectOrErrorALertBox().display(code1, "运动到终点失败", null);
+									}
+								});
+							}
+						}
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+			} else {
+				Platform.runLater(new Runnable() {
+					public void run() {
+						startMove = false;
+						new AlertCorrectOrErrorALertBox().display(4, "运动到起点失败", null);
+					}
+				});
+
+			}
+			if (startMove) { // 如果以上出现问题,则不执行以下代码
+				try {
+					Thread.sleep(500);
+					UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); // 停气泵
+					Thread.sleep(100);
+					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0,
+							new float[] { 0, -286, 150 });// 先回零
+					Thread.sleep(1500);
+					UIGlobalVar.brobotArm.controlDoorMovement(UIGlobalVar.ppArm.getValue(), 0,
+							new float[] { -277, -68, 150 });// 再移开
 					Thread.sleep(2000);
 					UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte) 0x05);
 
@@ -894,7 +1232,7 @@ public class MainPage extends Application {
 	/**
 	 * 将获得的策略信息转化为坐标数组
 	 *
-	 * @param strategy  策略计算出的棋盘的行列信息
+	 * @param strategy 策略计算出的棋盘的行列信息
 	 * @return 返回到是一个坐标的二维数组
 	 */
 	public float[][] conversion(int[] strategy) {
@@ -947,18 +1285,12 @@ public class MainPage extends Application {
 
 		/**
 		 *
-		 * @param whichConn
-		 *            1连接PC 2连接ARM
-		 * @param chess
-		 *            pc接口
-		 * @param brobot
-		 *            arm接口
-		 * @param comboBox
-		 *            端口号
-		 * @param listener
-		 *            pc监听,如连接的是arm,此参数没用
-		 * @param armDataListener
-		 *            armji
+		 * @param whichConn       1连接PC 2连接ARM
+		 * @param chess           pc接口
+		 * @param brobot          arm接口
+		 * @param comboBox        端口号
+		 * @param listener        pc监听,如连接的是arm,此参数没用
+		 * @param armDataListener armji
 		 * @param pp
 		 */
 		public ConnPCThread(ChessMovesInterface chess, ComboBox<String> comboBox, ChessInfoListener listener,
@@ -981,7 +1313,7 @@ public class MainPage extends Application {
 						@Override
 						public void run() {
 							alertConncet = new AlertCorrectOrErrorALertBox();
-							alertConncet.display(101,"正在连接中",null);
+							alertConncet.display(101, "正在连接中", null);
 						}
 					});
 				}
@@ -1085,18 +1417,12 @@ public class MainPage extends Application {
 
 		/**
 		 *
-		 * @param whichConn
-		 *            1连接PC 2连接ARM
-		 * @param chess
-		 *            pc接口
-		 * @param brobot
-		 *            arm接口
-		 * @param comboBox
-		 *            端口号
-		 * @param listener
-		 *            pc监听,如连接的是arm,此参数没用
-		 * @param armDataListener
-		 *            armji
+		 * @param whichConn       1连接PC 2连接ARM
+		 * @param chess           pc接口
+		 * @param brobot          arm接口
+		 * @param comboBox        端口号
+		 * @param listener        pc监听,如连接的是arm,此参数没用
+		 * @param armDataListener armji
 		 * @param pp
 		 */
 		public ConnARMThread(BrobotUserInterface brobot, ComboBox<String> comboBox, ArmDataListener listener,
@@ -1119,7 +1445,7 @@ public class MainPage extends Application {
 						@Override
 						public void run() {
 							alertConncet = new AlertCorrectOrErrorALertBox();
-							alertConncet.display(101,"正在连接中",null);
+							alertConncet.display(101, "正在连接中", null);
 						}
 					});
 				}
@@ -1215,7 +1541,6 @@ public class MainPage extends Application {
 			UIGlobalVar.COMM_Y_Layout1 = frame.getY();
 			UIGlobalVar.COMM_Z_Layout1 = frame.getZ();
 
-
 			// 界面显示的实时坐标
 			Platform.runLater(new Runnable() {
 
@@ -1226,9 +1551,9 @@ public class MainPage extends Application {
 				}
 			});
 			if (frame.getBtnSignal() == 1) {
-				count10Second = -1;//到技术10秒立即结束
+				count10Second = -1;// 到技术10秒立即结束
 
-				System.out.println("countcountcount     "+count10Second);
+				System.out.println("countcountcount     " + count10Second);
 				Platform.runLater(new Runnable() {
 
 					@Override
@@ -1247,76 +1572,33 @@ public class MainPage extends Application {
 
 		@Override
 		public void onDataChessInfo(chessInfoModel frame) {
+
 			values = frame.getParam(); // 获取的byte数组
 			System.out.println("接收到了从裁判端的数据                 " + frame.getParam().length);
- 
-            /**
-			 * 默认为黑棋
-			 * 有两处需要设置
-			 * line1261 Object object = demo.strategy(values,(byte) 0x01);
-			 * line1286 int endIndex = (strategy[2] - 1) * 9 + (strategy[3] - 1);
-			 */
 
-			// 得到策略object
-			// 黑棋
-			Object object = demo.strategy(values,(byte) 0x01);
-			// 红棋
-			// Object object = demo.strategy(values,(byte) 0x00);
+			Platform.runLater(new Runnable() {
+				public void run() {
+					UIGlobalVar.textValue.setText("接收才判断信息成功");
+					// new
+					// AlertCorrectOrErrorALertBox().display(101,
+					// "运动完毕,请点击\"发送\"按钮继续",
+					// null);
 
-			if (object instanceof Integer) { // 识别失败
-				Platform.runLater(new Runnable() {
+				}
+			});
 
-					@Override
-					public void run() {
-						new AlertCorrectOrErrorALertBox().display(object, "策略计算失败", null);
-
-					}
-				});
-			} else {
-
-				// 初始化一系列坐标
-				// 读取xml中的值
-				ArrayList<ArrayList<Float>> valuesXY = WriteValueToXml.readFromXML();
-				//初始化棋盘在机械臂中的坐标
-				resetLayout(valuesXY);
-
-				int[] strategy = (int[]) object;
-
-				// 黑棋的情况
-				int endIndex = (strategy[2] - 1) * 9 + (strategy[3] - 1); // 棋子移动终点的索引,用来判断终点没有没有棋子被吃
-				// 红棋的情况
-				// int endIndex = 89 - (strategy[2] - 1) * 9 - (strategy[3] - 1); // 棋子移动终点的索引,用来判断终点没有没有棋子被吃
-
-				float[][] layoutStartAndEnd = conversion(strategy); // 将获得的策略信息转化为机械臂坐标的二维数组
-
-				System.err.println("起点坐标    :    (" + layoutStartAndEnd[0][0] + ", " + layoutStartAndEnd[0][1] + ", "
-						+ layoutStartAndEnd[0][2] + ")");
-				System.err.println("终点坐标    :    (" + layoutStartAndEnd[1][0] + ", " + layoutStartAndEnd[1][1] + ", "
-						+ layoutStartAndEnd[1][2] + ")");
-
-				float[] start = layoutStartAndEnd[0];
-				float[] end = layoutStartAndEnd[1];
-				/********************************** 学生自己完成 *********************************************************/
-
-
-				// 控制运动函数
-
-//				controlArmToMove(endIndex, start, end, layout16);
-				demo.moveChess(endIndex, values, start, end, layout16);
-
-
-				/********************************** 学生自己完成 *********************************************************/
-				super.onDataChessInfo(frame);
-			}
+			super.onDataChessInfo(frame);
 
 		}
 	}
+
 	/**
 	 * 发送一个运动指令10秒的倒计时,如超过10秒没有到目的地则结束所有运动,并且关闭控制信号
+	 * 
 	 * @author yuancheng
 	 *
 	 */
-	public class TenMinutesThread implements Runnable{
+	public class TenMinutesThread implements Runnable {
 
 		@Override
 		public void run() {
@@ -1325,25 +1607,25 @@ public class MainPage extends Application {
 			while (tenMinutesFlag) {
 				try {
 					System.out.println(count10Second);
-				if (count10Second < 0) {
-					//弹出移动异常的提示
+					if (count10Second < 0) {
+						// 弹出移动异常的提示
 
-					Platform.runLater(new Runnable() {
+						Platform.runLater(new Runnable() {
 
-						@Override
-						public void run() {
-							new AlertCorrectOrErrorALertBox().display(101, "移动机械臂失败,结束当前指令", null);
-						}
-					});
-					moveFlag = false;//结束运动点的循环
-					tenMinutesFlag = false;//结束本循环
-					startMove = false;//不执行移开棋子后再走棋子的步骤
-					UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); // 停气泵
-					Thread.sleep(100);
-					UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte)0x05); //关闭运动信号,结束当前操作
+							@Override
+							public void run() {
+								new AlertCorrectOrErrorALertBox().display(101, "移动机械臂失败,结束当前指令", null);
+							}
+						});
+						moveFlag = false;// 结束运动点的循环
+						tenMinutesFlag = false;// 结束本循环
+						startMove = false;// 不执行移开棋子后再走棋子的步骤
+						UIGlobalVar.brobotArm.controlAirPumpAction(UIGlobalVar.ppArm.getValue(), (byte) 0x00); // 停气泵
+						Thread.sleep(100);
+						UIGlobalVar.brobotArm.setControlSignel(UIGlobalVar.ppArm.getValue(), (byte) 0x05); // 关闭运动信号,结束当前操作
 
-				}
-				count10Second = count10Second-1;
+					}
+					count10Second = count10Second - 1;
 
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
